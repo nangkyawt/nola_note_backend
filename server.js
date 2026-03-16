@@ -4,7 +4,6 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import notesRouter from "./routes/notes.js";
 import Note from "./models/Note.js"; 
-// const Note = mongoose.models.Note || mongoose.model('Note', noteSchema);
 dotenv.config();
 
 const app = express();
