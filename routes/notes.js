@@ -1,8 +1,9 @@
 import express from 'express';
 const router = express.Router();
 import mongoose from 'mongoose';
+import Note from '../models/Note';
 
-// Define your Note model (or import if already defined)
+
 const noteSchema = new mongoose.Schema({
   title: String,
   content: String,
@@ -11,16 +12,38 @@ const noteSchema = new mongoose.Schema({
 const Note = mongoose.models.Note || mongoose.model('Note', noteSchema);
 
 // GET all notes
-router.get('/', async (req, res) => {
-  const notes = await Note.find().sort({ createdAt: -1 });
-  res.json(notes);
+router.get("/", async (req, res) => {
+  try {
+    const notes = await Note.find().sort({ createdAt: -1 });
+
+    const notesWithColor = notes.map((note) => {
+      const n = note.toObject();
+
+      return {
+        ...n,
+        color: n.color || "bg-pink-100",
+        emoji: n.emoji || "📝",
+        pinned: n.pinned ?? false,
+        tags: n.tags || []
+      };
+    });
+
+    res.json(notesWithColor);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch notes" });
+  }
 });
 
 // POST new note
-router.post('/', async (req, res) => {
-  const newNote = new Note(req.body);
-  const savedNote = await newNote.save();
-  res.status(201).json(savedNote);
+router.post("/", async (req, res) => {
+  console.log("POST /notes body:", req.body); // should include color
+  try {
+    const note = await Note.create(req.body); // send full body
+    res.status(201).json(note);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to create note" });
+  }
 });
 
 // DELETE note

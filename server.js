@@ -2,14 +2,14 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
-import notesRouter from "./routes/notes.js"; 
-
+import notesRouter from "./routes/notes.js";
+import Note from "./models/Note.js"; 
+// const Note = mongoose.models.Note || mongoose.model('Note', noteSchema);
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 app.use(cors());
-app.use(express.json());
 app.use(express.json());
 app.use("/api/notes", notesRouter);
 
@@ -30,7 +30,7 @@ const noteSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
-const Note = mongoose.models.Note || mongoose.model('Note', noteSchema);
+
 
 // GET all notes
 app.get('/api/notes', async (req, res) => {
@@ -43,6 +43,7 @@ app.get('/api/notes', async (req, res) => {
 });
 
 app.post("/api/notes", async (req, res) => {
+  console.log("POST /notes body:", req.body);
     try {
         const { title, content, color, emoji, pinned, tags, text } = req.body;
 
