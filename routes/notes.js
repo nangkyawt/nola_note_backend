@@ -17,7 +17,7 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   console.log("POST /notes body:", req.body);
   try {
-    const note = await Note.create(req.body); // <-- save all fields
+    const note = await Note.create(req.body); 
     res.status(201).json(note);
   } catch (err) {
     console.error(err);

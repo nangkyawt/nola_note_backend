@@ -4,18 +4,22 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import notesRouter from "./routes/notes.js";
 import Note from "./models/Note.js"; 
-dotenv.config();
+import authRouter from "./routes/auth.js";
+// require('dotenv').config();
 
+
+dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5001;
 app.use(cors());
 app.use(express.json());
 app.use("/api/notes", notesRouter);
+app.use("/api/auth", authRouter);
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log("✅ MongoDB Connected"))
-    .catch(err => console.error("❌ MongoDB Connection Error:", err));
+    .then(() => console.log("MongoDB Connected"))
+    .catch(err => console.error("MongoDB Connection Error:", err));
 
 // Note schema with color, emoji, pinned, tags, text
 const noteSchema = new mongoose.Schema({
@@ -32,38 +36,6 @@ const noteSchema = new mongoose.Schema({
 
 
 // GET all notes
-app.get('/api/notes', async (req, res) => {
-    try {
-        const notes = await Note.find().sort({ createdAt: -1 });
-        res.json(notes);
-    } catch (err) {
-        res.status(500).json({ error: "Failed to fetch notes" });
-    }
-});
-
-app.post("/api/notes", async (req, res) => {
-  console.log("POST /notes body:", req.body);
-    try {
-        const { title, content, color, emoji, pinned, tags, text } = req.body;
-
-        const note = await Note.create({
-            title,
-            content,
-            color,
-            emoji,
-            pinned,
-            tags,
-            text
-        });
-
-        res.status(201).json(note);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Failed to create note" });
-    }
-});
-
-
 // app.get('/api/notes', async (req, res) => {
 //     try {
 //         const notes = await Note.find().sort({ createdAt: -1 });
@@ -73,6 +45,38 @@ app.post("/api/notes", async (req, res) => {
 //     }
 // });
 
+// app.post("/api/notes", async (req, res) => {
+//   console.log("POST /notes body:", req.body);
+//     try {
+//         const { title, content, color, emoji, pinned, tags, text } = req.body;
+
+//         const note = await Note.create({
+//             title,
+//             content,
+//             color,
+//             emoji,
+//             pinned,
+//             tags,
+//             text
+//         });
+
+//         res.status(201).json(note);
+//     } catch (err) {
+//         console.error(err);
+//         res.status(500).json({ error: "Failed to create note" });
+//     }
+// });
+
+
+app.get('/api/notes', async (req, res) => {
+    try {
+        const notes = await Note.find().sort({ createdAt: -1 });
+        res.json(notes);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch notes" });
+    }
+});
+
 // Update note
 app.put("/api/notes/:id", async (req, res) => {
   try {
@@ -81,7 +85,7 @@ app.put("/api/notes/:id", async (req, res) => {
     const updatedNote = await Note.findByIdAndUpdate(
       req.params.id,
       { title, content, color, emoji, pinned, tags, text },
-      { new: true } // return the updated note
+      { new: true } 
     );
 
     if (!updatedNote) {
@@ -95,6 +99,7 @@ app.put("/api/notes/:id", async (req, res) => {
   }
 });
 
+// Delete
 app.delete("/api/notes/:id", async (req, res) => {
   try {
     const deletedNote = await Note.findByIdAndDelete(req.params.id);

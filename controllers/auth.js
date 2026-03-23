@@ -1,42 +1,90 @@
-// backend/controllers/auth.js
-const jwt = require("jsonwebtoken");
-const User = require("../models/User"); // your user model
+import User from "../models/user.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
-// Login user and generate token
-const login = async (req, res) => {
+// ===== SIGNUP =====
+export const signup = async (req, res) => {
+  const { username, email, password } = req.body;
+
+  try {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
+
+    const newUser = await User.create({
+      username,
+      email,
+      password 
+    });
+
+    const token = jwt.sign(
+      { id: newUser._id, username: newUser.username },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.status(201).json({
+      message: "User created successfully",
+      token,
+      user: { id: newUser._id, username, email },
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+// ===== LOGIN =====
+export const login = async (req, res) => {
   const { email, password } = req.body;
 
-  // Find user in DB
-  const user = await User.findOne({ email });
-  if (!user) return res.status(404).json({ message: "User not found" });
+  try {
+    const user = await User.findOne({ email });
 
-  // Check password (for now plaintext, later use bcrypt)
-  if (user.password !== password)
-    return res.status(401).json({ message: "Invalid password" });
+    if (!user)
+      return res.status(404).json({ message: "User not found" });
 
-  // Sign JWT
-  const token = jwt.sign(
-    { id: user._id, name: user.name },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || "1d" }
-  );
+    const isMatch = await user.comparePassword(password);
 
-  res.json({ token, user: { id: user._id, name: user.name, email } });
+    if (!isMatch)
+      return res.status(401).json({ message: "Invalid password" });
+
+    const token = jwt.sign(
+      { id: user._id, username: user.username },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email
+      }
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
 };
 
-// Middleware to protect routes
-const verifyToken = (req, res, next) => {
+// ===== VERIFY TOKEN =====
+export const verifyToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ message: "No token provided" });
+
+  if (!authHeader)
+    return res.status(401).json({ message: "No token provided" });
 
   const token = authHeader.split(" ")[1];
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
     next();
-  } catch (err) {
+  } catch {
     res.status(401).json({ message: "Invalid token" });
   }
 };
-
-module.exports = { login, verifyToken };
